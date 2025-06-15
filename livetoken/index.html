@@ -17,7 +17,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #ECF6FF 0%, #ECF6FF 100%);
             min-height: 100vh;
-           padding: 20px;
+            padding: 20px;
         }
         .dropdown-menu {
             border-radius: 20px;
@@ -151,20 +151,23 @@
             font-size: 1.8rem;
         }
 
+        /* Adjusted .tokens-wrapper for better spacing and responsiveness */
         .tokens-wrapper {
             display: flex;
-            justify-content: space-between;
+            justify-content: center; /* Center the items when they don't fill the row */
             align-items: flex-start;
-            gap: 20px;
-            flex-wrap: wrap;
+            gap: 20px; /* Consistent gap between tokens */
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
             margin-bottom: 40px;
         }
 
         .token {
-            flex: 1;
+            /* Removed flex: 1; to prevent excessive stretching on wider screens */
             min-width: 160px;
+            max-width: 200px; /* Max width to keep tokens from getting too wide */
             text-align: center;
             position: relative;
+            padding-bottom: 20px; /* Space for the connection line */
         }
 
         .token-circle {
@@ -185,7 +188,6 @@
 
         .token-circle.completed {
             background: #4CAF50;
-            /* animation: pulse 2s infinite; Removed to prevent conflict with outer pulse */
         }
 
         .token-circle.current {
@@ -247,18 +249,20 @@
             color: #666;
         }
 
+        /* Adjusted connection line positioning for flexbox */
         .connection-line {
             height: 4px;
             background: #E0E0E0;
             position: absolute;
-            top: 30px;
-            left: 50%;
-            right: -50%;
-            z-index: 1;
+            top: 60px; /* Aligns with the middle of the token circles */
+            left: calc(50% + 30px); /* Start after the current token circle */
+            width: calc(100% - 60px); /* Adjust width to connect to the next token */
+            z-index: 0; /* Behind the tokens */
+            transform: translateX(-50%); /* Adjust for left: 50% */
         }
-
-        .token:last-child .connection-line {
-            display: none;
+        
+        .token:not(:last-child) .connection-line {
+            display: block; /* Ensure connection line is shown for all but the last token */
         }
 
         .connection-line.active {
@@ -344,7 +348,8 @@
             }
             
             .connection-line {
-                display: none;
+                /* On small screens, hide horizontal lines and use vertical spacing */
+                display: none !important;
             }
 
             .tracker-header {
@@ -471,7 +476,7 @@
         <div class="visual-queue">
             <h2><i class="fas fa-users"></i> Current Queue Status</h2>
             <div class="tokens-wrapper" id="visual-tokens">
-                </div>
+            </div>
         </div>
 
         <div class="section-divider"></div>
@@ -479,7 +484,7 @@
         <div class="wait-time-section">
             <h3><i class="fas fa-clock"></i> Estimated Wait Times</h3>
             <ul class="list-group wait-time-list" id="token-list">
-                </ul>
+            </ul>
         </div>
     </div>
 
@@ -503,7 +508,7 @@
                 <div class="col-md-3 text-start">
                     <h6 class="fw-bold">About Us</h6>
                     <ul class="list-unstyled small">
-                        <li><a href="../aboutUs copy/8345328.png" class="nav-link p-0">Our Team</a></li>
+                        <li><a href="../aboutUs copy/index.html" class="nav-link p-0">Our Team</a></li>
                         <li><a href="../termandCondition copy/index.html" class="nav-link p-0">Terms & Conditions</a></li>
                         <li><a href="../faqs copy/index.html" class="nav-link p-0">FAQs</a></li>
                     </ul>
@@ -633,11 +638,12 @@
                         circleContent = tokenData.token.toString(); // Show token number in circle
                 }
 
-                // Only add connection line if it's not the last token
+                // Only add connection line if it's not the last token and on larger screens
                 // Connection line is active if the previous token is completed or current
                 const isConnectionActive = (index > 0 && 
-                                           (currentTokenData[index - 1].status === 'completed' || 
-                                            currentTokenData[index - 1].status === 'current'));
+                                             (currentTokenData[index - 1].status === 'completed' || 
+                                              currentTokenData[index - 1].status === 'current' ||
+                                              currentTokenData[index - 1].status === 'start')); // Also active if previous was 'start'
 
                 const connectionLine = index < currentTokenData.length - 1 ? 
                     `<div class="connection-line ${isConnectionActive ? 'active' : ''}"></div>` : '';
@@ -712,37 +718,44 @@
 
         function advanceTokenQueue() {
             let nextStartIndex = currentTokenData.findIndex(t => t.status === 'start');
-            let nextWaitingIndex = currentTokenData.findIndex(t => t.status === 'waiting');
+            let currentIndex = currentTokenData.findIndex(t => t.status === 'current');
+
+            if (currentIndex !== -1) {
+                // If there's a current token, mark it as completed first
+                currentTokenData[currentIndex].status = 'completed';
+            }
 
             if (nextStartIndex !== -1) {
                 // If there's a 'start' token, make it 'current'
                 currentTokenData[nextStartIndex].status = 'current';
-                // Find the token that was just 'current' and set it to 'completed'
-                let currentCompletedIndex = currentTokenData.findIndex(t => t.status === 'current' && t.token !== currentTokenData[nextStartIndex].token);
-                if (currentCompletedIndex !== -1) {
-                    currentTokenData[currentCompletedIndex].status = 'completed';
-                }
             } else {
                 // If no 'start' token, but there's a 'waiting' token, make the first 'waiting' token 'current'
-                // This handles the initial state where no 'current' or 'start' token exists yet
-                if (nextWaitingIndex !== -1) {
-                    currentTokenData[nextWaitingIndex].status = 'current';
+                let firstWaitingIndex = currentTokenData.findIndex(t => t.status === 'waiting');
+                if (firstWaitingIndex !== -1) {
+                    currentTokenData[firstWaitingIndex].status = 'current';
                 } else {
                     console.log("No more tokens to advance.");
-                    return; // No more tokens to process
+                    // If no current or waiting tokens left, reset states or display empty queue message
+                    displayVisualTokens();
+                    displayLiveTokens();
+                    return;
                 }
             }
 
-            // After moving 'start' to 'current', find the next 'waiting' token and make it 'start'
-            // We need to re-find the next waiting token as indices might have changed.
-            nextWaitingIndex = currentTokenData.findIndex(t => t.status === 'waiting');
-            if (nextWaitingIndex !== -1) {
-                currentTokenData[nextWaitingIndex].status = 'start';
+            // Find the next 'waiting' token and make it 'start'
+            // This should happen AFTER the 'current' token is set, to find the *next* one correctly.
+            const updatedCurrentIndex = currentTokenData.findIndex(t => t.status === 'current'); // Find the new current
+            if (updatedCurrentIndex !== -1) {
+                const nextCandidateIndex = currentTokenData.findIndex((t, i) => i > updatedCurrentIndex && t.status === 'waiting');
+                if (nextCandidateIndex !== -1) {
+                    currentTokenData[nextCandidateIndex].status = 'start';
+                }
             }
             
             displayVisualTokens();
             displayLiveTokens();
         }
+
 
         function completeCurrentToken() {
             let currentIndex = currentTokenData.findIndex(t => t.status === 'current');
@@ -778,16 +791,23 @@
         // Initialize the system
         // On initial load, set the first 'waiting' token to 'current' and the next to 'start' if applicable
         function initializeQueue() {
-            let firstWaitingIndex = currentTokenData.findIndex(t => t.status === 'waiting');
-            if (firstWaitingIndex !== -1) {
-                currentTokenData[firstWaitingIndex].status = 'current';
-                if (firstWaitingIndex + 1 < currentTokenData.length) {
-                    currentTokenData[firstWaitingIndex + 1].status = 'start';
+            // Find the first token that is not 'completed'
+            let firstActiveTokenIndex = currentTokenData.findIndex(t => t.status !== 'completed');
+
+            if (firstActiveTokenIndex !== -1) {
+                // If there's an active token, set it to 'current'
+                currentTokenData[firstActiveTokenIndex].status = 'current';
+
+                // Then, find the next non-completed token and set it to 'start'
+                let nextToStart = currentTokenData.findIndex((t, i) => i > firstActiveTokenIndex && t.status !== 'completed');
+                if (nextToStart !== -1) {
+                    currentTokenData[nextToStart].status = 'start';
                 }
             }
             displayVisualTokens();
             displayLiveTokens();
         }
+
         initializeQueue(); // Call this to set initial state
 
         addTokenClickHandlers();
