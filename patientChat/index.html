@@ -616,10 +616,10 @@
     <script>
         // Mock Doctor Data - KEEP ONLY THIS DEFINITION
         const doctors = [
-            { id: 1, name: 'Dr. Emily White', specialty: 'General Physician', avatar: '8345328.png' },
-            { id: 2, name: 'Dr. John Smith', specialty: 'Psychologist', avatar: '8345328.png' },
-            { id: 3, name: 'Dr. Sarah Lee', specialty: 'Psychiatrist', avatar: '8345328.png' },
-            { id: 4, name: 'Dr. David Kim', specialty: 'Counselor', avatar: '8345328.png' },
+            { id: 1, name: 'Dr. Karan Sharma', specialty: 'General Physician', avatar: '8345328.png' },
+            { id: 2, name: 'Dr. Ansh', specialty: 'Psychologist', avatar: '8345328.png' },
+            { id: 3, name: 'Dr. Sarah Khan', specialty: 'Psychiatrist', avatar: '8345328.png' },
+            { id: 4, name: 'Dr. Harsh Singh', specialty: 'Counselor', avatar:'8345328.png' },
             { id: 5, name: 'Dr. Priya Sharma', specialty: 'Therapist', avatar: '8345328.png' },
             { id: 6, name: 'Dr. Rahul Verma', specialty: 'Family Counselor', avatar: '8345328.png' }
         ];
@@ -656,7 +656,7 @@
                 doctorCard.setAttribute('data-id', doctor.id);
                 doctorCard.innerHTML = `
                     <div class="doctor-avatar">
-                        ${doctor.avatar.startsWith('http') ? `<img src="${doctor.avatar}" alt="${doctor.name[0]}"/>` : doctor.avatar}
+                        ${doctor.avatar.startsWith('http') ? `<img src="${doctor.avatar}" alt="${doctor.name[0]}"/>` : `<img src="${doctor.avatar}" alt="${doctor.name[0]}" />`}
                     </div>
                     <h4>${doctor.name}</h4>
                     <p>${doctor.specialty}</p>
